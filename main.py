@@ -20,15 +20,16 @@ def change_reminder(time_stamps,time_price_dict):
             high = max(prices)
             low = min(prices)
             change = (high - low)/avg_price
-            print(change*100)
             if change > 0.01:
                 robot.send(f'行情提醒\n{now}\nETH近5分钟价格变化比例为{round(100*change,2)}%\n最高价：{high}\n最低价：{low}')
                 time_stamps = []
                 time_price_dict = dict()
-            return time_stamps,time_price_dict
+            change_ratio = round(change*100,5)
+            return time_stamps,time_price_dict,change_ratio
             break
 
 # def hundred_point_reminder(price):
+
 
 
 def get_tick():
@@ -39,10 +40,22 @@ def get_tick():
     last_price = float(data['last'])
     return trade_time,last_price
 
-
+def hundred_check(last_price,hundred_record):
+    now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    fraction = last_price//100
+    remainder = last_price%100
+    if remainder<1 or abs(remainder-100)<1:
+        if hundred_record == True:
+            robot.send(f'行情提醒\n{now}\n当前ETH价格为:{last_price}')
+            hundred_record = False
+        return hundred_record
+    elif remainder>5 or abs(remainder-100)<5:
+        hundred_record =True
+    return hundred_record
 
 time_stamps = []
 time_price_dict = dict()
+hundred_record = True
 
 robot_id = '9b6d23422bf3aab35a20040a87cf08b402bed8ef3cc189c1137de13fa6bb0eaf'
 robot = DingDingRobot(robot_id)
@@ -51,8 +64,13 @@ while True:
     if trade_time not in time_stamps:
         time_stamps.append(trade_time)
         time_price_dict[trade_time] = last_price
-
-    time_stamps,time_price_dict = change_reminder(time_stamps,time_price_dict)
+    time_stamps,time_price_dict,change_ratio = change_reminder(time_stamps,time_price_dict)
+    hundred_record = hundred_check(last_price,hundred_record)
+    print('ETH行情')
+    print(trade_time.split('.')[0])
+    print(f'最新价：{last_price}')
+    print(f'5min变化率：{change_ratio}%')
+    print('\n')
     time.sleep(1)
 
 
