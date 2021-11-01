@@ -2,6 +2,7 @@ from api import getETHticker
 import datetime
 from dingding_robot import DingDingRobot
 import time
+import pandas as pd
 # def get_tick():
 #     tick_json = getETHticker()
 #     data = tick_json['data'][0]
@@ -24,25 +25,30 @@ import time
 # # hundred_point_reminder(1)
 
 
-def hundred_check(last_price,hundred_record):
-    fraction = last_price//100
-    remainder = last_price%100
-    if remainder<1 or abs(remainder-100)<1:
-        if hundred_record == True:
-            # robot.send()
-            hundred_record = False
-        return hundred_record
-    elif remainder>5 or abs(remainder-100)<5:
-        hundred_record =True
-    return hundred_record
+# def hundred_check(last_price,hundred_record):
+#     fraction = last_price//100
+#     remainder = last_price%100
+#     if remainder<1 or abs(remainder-100)<1:
+#         if hundred_record == True:
+#             # robot.send()
+#             hundred_record = False
+#         return hundred_record
+#     elif remainder>5 or abs(remainder-100)<5:
+#         hundred_record =True
+#     return hundred_record
     
 
 
 
 
-hundred_record = True
-for last_price in [3990,3995,3999.3,4000.1,4003,4000.2,4006,4000.1]:
-    print('-------------------------------')
-    print(last_price)
-    print(hundred_record)
-    hundred_record = hundred_check(last_price,hundred_record)
+# hundred_record = True
+# for last_price in [3990,3995,3999.3,4000.1,4003,4000.2,4006,4000.1]:
+#     print('-------------------------------')
+#     print(last_price)
+#     print(hundred_record)
+#     hundred_record = hundred_check(last_price,hundred_record)
+
+def notification_time_ls(freq):
+    time_ls = pd.date_range('00:00:00', '23:59:59',freq=freq).strftime('%H:%M:%S').to_list()
+    return time_ls
+notification_time_ls('15min')
