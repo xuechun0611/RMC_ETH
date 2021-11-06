@@ -24,9 +24,9 @@ amount_sum = []
 ma30 = 0
 
 # 参数
-n = 0.1
-single_bet = 1000
-lever = 10
+n = 0.05
+single_bet = 100
+lever = 20
 total = 10000
 expected_benefit = 0.5
 
@@ -46,6 +46,7 @@ def json_translate(
     time=None,
     total=None,
     ma30=None,
+    start_time=None,
 ):
     return {
         "price": price,
@@ -58,6 +59,7 @@ def json_translate(
         "time": time,
         "total": total,
         "ma30": ma30,
+        "start_time": start_time,
     }
 
 
@@ -68,7 +70,7 @@ for row in df.iterrows():
         break
     volume_sum.append(row[1]["volume"])
     amount_sum.append(row[1]["amount"])
-    if row[0] >= 30:
+    if row[0] >= 450:
         ma30 = sum(amount_sum) / sum(volume_sum)
         volume_sum.pop(0)
         amount_sum.pop(0)
@@ -84,6 +86,7 @@ for row in df.iterrows():
             row[1]["close_price"]
             + single_bet / (single_bet * lever / row[1]["close_price"]),
             ma30=ma30,
+            start_time=row[1]["trade_time"],
         )
         position.append(j)
         total -= single_bet
@@ -97,6 +100,7 @@ for row in df.iterrows():
             row[1]["close_price"]
             - single_bet / (single_bet * lever / row[1]["close_price"]),
             ma30=ma30,
+            start_time=row[1]["trade_time"],
         )
         position.append(j)
         total -= single_bet
@@ -110,7 +114,7 @@ for row in df.iterrows():
             bad_move = position.pop(0)
             bad_move["deal_price"] = (row[1]["high_price"], row[1]["low_price"])
             bad_move["force"] = True
-            bad_move["time"] = row[0]
+            bad_move["time"] = row[1]["trade_time"]
             bad_move["total"] = total
             history.append(bad_move)
             continue
@@ -120,11 +124,13 @@ for row in df.iterrows():
         if benefit >= expected_benefit * position[0]["amount/USDT"]:
             achieved = position.pop(0)
             achieved["deal_price"] = row[1]["close_price"]
-            achieved["time"] = row[0]
+            achieved["time"] = row[1]["trade_time"]
             # bad_move["force"] = False
             total += benefit - transaction_fee + single_bet
             achieved["total"] = total
             history.append(achieved)
+    if total <= 0:
+        break
 
 
 with open("result.json", "w", encoding="utf-8") as f:
