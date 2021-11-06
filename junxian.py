@@ -24,31 +24,45 @@ amount_sum = []
 ma30 = 0
 
 # 参数
-n = 0.08
-single_bet = 100
-lever = 125
+n = 0.1
+single_bet = 1000
+lever = 10
 total = 10000
+expected_benefit = 0.5
 
 # 只跑前lines行数据
-lines = 10000
+lines = 50000
 count = 0
 
 
 def json_translate(
-    price, amount, volume, lever, force_price, deal_price=None, time=None
+    price,
+    amount,
+    volume,
+    lever,
+    force_price,
+    force=None,
+    deal_price=None,
+    time=None,
+    total=None,
+    ma30=None,
 ):
     return {
         "price": price,
         "amount/USDT": amount,
         "volume": volume,
         "lever": lever,
+        "force": False,
         "force_price": force_price,
         "deal_price": deal_price,
         "time": time,
+        "total": total,
+        "ma30": ma30,
     }
 
 
 for row in df.iterrows():
+    ma30 = row[1]["open_price"]
     count += 1
     if count == lines:
         break
@@ -69,6 +83,7 @@ for row in df.iterrows():
             lever,
             row[1]["close_price"]
             + single_bet / (single_bet * lever / row[1]["close_price"]),
+            ma30=ma30,
         )
         position.append(j)
         total -= single_bet
@@ -79,7 +94,9 @@ for row in df.iterrows():
             1 * single_bet,
             1 * single_bet * lever / row[1]["close_price"],
             lever,
-            row[1]["close_price"] + single_bet,
+            row[1]["close_price"]
+            - single_bet / (single_bet * lever / row[1]["close_price"]),
+            ma30=ma30,
         )
         position.append(j)
         total -= single_bet
@@ -91,19 +108,23 @@ for row in df.iterrows():
             and row[1]["low_price"] <= position[0]["force_price"]
         ):
             bad_move = position.pop(0)
-            bad_move["deal_price"] = row[1]["close_price"]
+            bad_move["deal_price"] = (row[1]["high_price"], row[1]["low_price"])
+            bad_move["force"] = True
             bad_move["time"] = row[0]
+            bad_move["total"] = total
             history.append(bad_move)
             continue
         # check 收益
         benefit = (row[1]["close_price"] - position[0]["price"]) * position[0]["volume"]
         transaction_fee = benefit * 0.001
-        if benefit >= 2 * position[0]["amount/USDT"]:
+        if benefit >= expected_benefit * position[0]["amount/USDT"]:
             achieved = position.pop(0)
             achieved["deal_price"] = row[1]["close_price"]
             achieved["time"] = row[0]
+            # bad_move["force"] = False
+            total += benefit - transaction_fee + single_bet
+            achieved["total"] = total
             history.append(achieved)
-            total += benefit - transaction_fee
 
 
 with open("result.json", "w", encoding="utf-8") as f:
