@@ -1,0 +1,41 @@
+[
+    {
+        "price": 1202.0,
+        "amount/USDT": 1000,
+        "volume": -8.319467554076539,
+        "lever": 10,
+        "force": false,
+        "force_price": 1322.2,
+        "deal_price": 1136.02,
+        "time": 14625,
+        "total": 10548.369550748752,
+        "ma30": 1090.2451090656705
+    },
+    {
+        "price": 933.66,
+        "amount/USDT": 1000,
+        "volume": -10.7105370263265,
+        "lever": 10,
+        "force": true,
+        "force_price": 1027.026,
+        "deal_price": [
+            1032.5,
+            1011.01
+        ],
+        "time": 22880,
+        "total": 9548.369550748752,
+        "ma30": 830.7050158285662
+    },
+    {
+        "price": 950.0,
+        "amount/USDT": 1000,
+        "volume": -10.526315789473685,
+        "lever": 10,
+        "force": false,
+        "force_price": 1045.0,
+        "deal_price": 883.99,
+        "time": 46751,
+        "total": 10242.516813906646,
+        "ma30": 862.6658164250842
+    }
+]
