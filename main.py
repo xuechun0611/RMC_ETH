@@ -1,8 +1,10 @@
+from os import times
 from api import getETHticker
 from datetime import datetime
 from dingding_robot import DingDingRobot
 import time
 import pandas as pd
+
 
 def change_reminder(time_stamps, time_price_dict):
     while True:
@@ -30,7 +32,21 @@ def change_reminder(time_stamps, time_price_dict):
                 time_price_dict = dict()
             change_ratio = round(change * 100, 5)
             return time_stamps, time_price_dict, change_ratio
-            break
+
+
+# 策略提示：计算450min的均价
+def ma_30_strat(price_stamps, time_price_dict):
+    limit = 0.05
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    price_stamps.append(now)
+    ma_30 = sum(price_stamps) / len(price_stamps)
+    prices = time_price_dict.values()
+    last_price = list(prices)[-1]
+    if last_price < ma_30 * (1 - limit):
+        robot.send(f"多单提示\n{now}\n下单价格为：{last_price}")
+    elif last_price > ma_30 * (1 + limit):
+        robot.send(f"空单提示\n{now}\n下单价格为：{last_price}")
+    return price_stamps, time_price_dict
 
 
 # def hundred_point_reminder(price):
@@ -58,30 +74,32 @@ def hundred_check(last_price, hundred_record):
         hundred_record = True
     return hundred_record
 
+
 def notification_time_ls(freq):
-    time_ls = pd.date_range('00:00:00', '23:59:59',freq=freq).strftime('%H:%M:%S').to_list()
+    time_ls = (
+        pd.date_range("00:00:00", "23:59:59", freq=freq).strftime("%H:%M:%S").to_list()
+    )
     return time_ls
 
-def regular_notification(notification_time_ls,next_notification,last_price):
+
+def regular_notification(notification_time_ls, next_notification, last_price):
     now = datetime.now().strftime("%H:%M:%S")
-    if next_notification == '' or now>next_notification:
-        next_notification_ls = [i for i in notification_time_ls if i>now]
+    if next_notification == "" or now > next_notification:
+        next_notification_ls = [i for i in notification_time_ls if i > now]
         if len(next_notification_ls) != 0:
             next_notification = next_notification_ls[0]
         else:
-            next_notification = '00:00:00'
+            next_notification = "00:00:00"
         robot.send(f"行情提醒\n{now}\n当前ETH价格为:{last_price}")
     return next_notification
 
 
-
-
-
 time_stamps = []
+price_stamps = []
 time_price_dict = dict()
 hundred_record = True
-notification_time_ls = notification_time_ls('15min')
-next_notification = ''
+notification_time_ls = notification_time_ls("15min")
+next_notification = ""
 
 robot_id = "9b6d23422bf3aab35a20040a87cf08b402bed8ef3cc189c1137de13fa6bb0eaf"
 robot = DingDingRobot(robot_id)
@@ -91,12 +109,18 @@ while True:
         trade_time, last_price = get_tick()
         if trade_time not in time_stamps:
             time_stamps.append(trade_time)
+            price_stamps.append(last_price)
+            if len(price_stamps) > 27000:
+                price_stamps.pop(0)
             time_price_dict[trade_time] = last_price
         time_stamps, time_price_dict, change_ratio = change_reminder(
             time_stamps, time_price_dict
         )
         hundred_record = hundred_check(last_price, hundred_record)
-        next_notification = regular_notification(notification_time_ls,next_notification,last_price)
+        next_notification = regular_notification(
+            notification_time_ls, next_notification, last_price
+        )
+        ma_start = ma_30_strat(price_stamps, time_price_dict)
 
         print("ETH行情")
         print(trade_time.split(".")[0])
@@ -105,6 +129,4 @@ while True:
         print("\n")
         time.sleep(1)
     except Exception as e:
-        robot.send(f'ERROR:ETH实时行情系统出错\n' +
-                   f'错误信息: {str(e)}')
-
+        robot.send(f"ERROR:ETH实时行情系统出错\n" + f"错误信息: {str(e)}")
