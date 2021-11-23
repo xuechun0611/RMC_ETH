@@ -1,5 +1,5 @@
 from os import times
-from api import getETHticker
+from api import getETHticker, getETHcandles
 from datetime import datetime
 from dingding_robot import DingDingRobot
 import time
@@ -38,14 +38,13 @@ def change_reminder(time_stamps, time_price_dict):
 def ma_30_strat(price_stamps, time_price_dict):
     limit = 0.05
     now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    price_stamps.append(now)
     ma_30 = sum(price_stamps) / len(price_stamps)
     prices = time_price_dict.values()
     last_price = list(prices)[-1]
     if last_price < ma_30 * (1 - limit):
-        robot.send(f"多单提示\n{now}\n下单价格为：{last_price}")
+        robot.send(f"多单提示\n{now}\n目前价格为：{last_price}\n下单价格为：{ma_30 * (1 - limit-0.01)}")
     elif last_price > ma_30 * (1 + limit):
-        robot.send(f"空单提示\n{now}\n下单价格为：{last_price}")
+        robot.send(f"空单提示\n{now}\n目前价格为：{last_price}\n下单价格为：{ma_30 * (1 + limit+0.01)}")
     return price_stamps, time_price_dict
 
 
@@ -107,6 +106,8 @@ robot = DingDingRobot(robot_id)
 while True:
     try:
         trade_time, last_price = get_tick()
+        candle = getETHcandles()
+        # print(candle)
         if trade_time not in time_stamps:
             time_stamps.append(trade_time)
             price_stamps.append(last_price)
